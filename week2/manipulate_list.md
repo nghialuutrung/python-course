@@ -1,10 +1,10 @@
 # Truy cập phần tử
 
-    ```python
+```python
     numbers = [1, 2, 3, 4, 5]
     first = numbers[0]    # 1
     last = numbers[-1]    # 5
-    ```
+```
 
 # Cắt list (slicing)
 
