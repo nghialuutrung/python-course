@@ -1,4 +1,4 @@
-# Truy cập và thay đổi**:
+# Truy cập và thay đổi
 
 ```python
 student = {
