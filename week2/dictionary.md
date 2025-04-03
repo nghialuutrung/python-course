@@ -1,33 +1,84 @@
-# Truy cập và thay đổi**:
+# Ứng dụng thực tế:
+
+- **Quản lý thông tin người dùng**:
 
 ```python
-student = {
-    "name": "John",
-    "age": 20
+user = {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "preferences": {
+        "theme": "dark",
+        "language": "vi"
+    }
 }
-
-# Truy cập
-name = student["name"]
-age = student.get("age")
-
-# Thay đổi
-student["age"] = 21
-student["grade"] = "A"  # Thêm key mới
 ```
 
-# Xóa phần tử
+- **Cấu hình ứng dụng**:
 
 ```python
-del student["age"]
-age = student.pop("age")
-student.clear()  # Xóa tất cả
+config = {
+    "database": {
+        "host": "localhost",
+        "port": 3306,
+        "name": "mydb"
+    },
+    "api": {
+        "base_url": "https://api.example.com",
+        "timeout": 30,
+        "user_ids": [1, 83, 278]
+    }
+}
 ```
 
-# Kiểm tra và loop
+- **Xử lý dữ liệu JSON**:
 
 ```python
-"name" in student  # True
+weather_data = {
+    "city": "Hanoi",
+    "temperature": 28,
+    "humidity": 75,
+    "forecast": ["sunny", "cloudy", "rainy"]
+}
+```
 
-for key in student:
-    print(key, student[key])
+# Ví dụ trực quan:
+
+- **Từ điển tiếng Anh**:
+
+```python
+# Giống như một cuốn từ điển
+dictionary = {
+    "hello": "xin chào",
+    "goodbye": "tạm biệt",
+    "thank you": "cảm ơn"
+}
+# Tra từ nhanh chóng
+meaning = dictionary["hello"]  # "xin chào"
+```
+
+- **Danh bạ điện thoại**:
+
+```python
+# Giống như danh bạ trên điện thoại
+phone_book = {
+    "Mẹ": "0123456789",
+    "Bố": "0987654321",
+    "Bạn thân": "0369852147"
+}
+# Tìm số điện thoại theo tên
+mom_phone = phone_book["Mẹ"]
+```
+
+- **Thực đơn nhà hàng**:
+
+```python
+# Giống như menu trong nhà hàng
+menu = {
+    "Phở": 50000,
+    "Bún bò": 45000,
+    "Cơm tấm": 40000
+}
+# Xem giá món ăn nhanh chóng
+pho_price = menu["Phở"]
 ```
