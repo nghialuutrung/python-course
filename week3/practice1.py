@@ -10,6 +10,40 @@ right_sensor = False
 is_running = False
 direction_names = ["Bắc", "Đông", "Nam", "Tây"]
 
+def resett(new_x,new_y):
+    direction = 0  # 0: bắc, 1: đông, 2: nam, 3: tây
+    speed = 0
+    left_sensor = False
+    center_sensor = False
+    right_sensor = False
+    is_running = False
+    x = new_x
+    y = new_y
+    print("Đã reset robot")
+    
+def setmode(running):
+    is_running = running
+    if running:
+        print("Đã bật robot")
+    else:
+        print("Đã tắt robot")
+
+def randomm():
+    # Thiết lập ngẫu nhiên trạng thái cảm biến
+    # Đảm bảo chỉ có một cảm biến được kích hoạt (True)
+    sensor_choice = random.randint(0, 2)  # 0: trái, 1: giữa, 2: phải
+
+    left_sensor = (sensor_choice == 0)
+    center_sensor = (sensor_choice == 1)
+    right_sensor = (sensor_choice == 2)
+    print(f"Cảm biến: Trái={left_sensor}, Giữa={center_sensor}, Phải={right_sensor}")
+
+def state():
+    print(f"Vị trí: ({x},{y})")
+    print(f"Hướng hiện tại: {direction_names[direction]}")
+    print(f"Tốc độ hiện tại: {speed}")
+    print(f"Cảm biến: Trái={left_sensor}, Giữa={center_sensor}, Phải={right_sensor}")
+        
 while True:
     print("\n===== MÔ PHỎNG ROBOT ĐI THEO LINE =====")
     print("1. Bật robot")
@@ -23,11 +57,9 @@ while True:
     user_input = input("Chọn số: ")
     
     if user_input == "1":
-        print("Đã bật robot")
-        is_running = True
+        setmode(True)
     elif user_input == "2":
-        print("Đã tắt robot")
-        is_running = False
+        setmode(False)
     elif user_input == "3":
         print("Đã di chuyển robot")
         if is_running == False:
@@ -38,14 +70,7 @@ while True:
                 print("Đã bắt đầu di chuyển")
                 for i in range(int(steps)):
                     print(f"---Bước {i+1}/{steps}---")
-                    # Thiết lập ngẫu nhiên trạng thái cảm biến
-                    # Đảm bảo chỉ có một cảm biến được kích hoạt (True)
-                    sensor_choice = random.randint(0, 2)  # 0: trái, 1: giữa, 2: phải
-
-                    left_sensor = (sensor_choice == 0)
-                    center_sensor = (sensor_choice == 1)
-                    right_sensor = (sensor_choice == 2)
-                    print(f"Cảm biến: Trái={left_sensor}, Giữa={center_sensor}, Phải={right_sensor}")
+                    randomm()
                     if left_sensor:
                         direction = (direction - 1) % 4
                         print(f"Robot rẽ trái, hướng mới: {direction_names[direction]}")
@@ -59,15 +84,12 @@ while True:
                     elif direction == 1:
                         x += speed
                     elif direction == 2:
-                        y -= speed
+                        y -= speed  
                     else:
                         x -= speed
                     print(f"Vị trí mới: ({x,y})")
                     time.sleep(1)
-                print("\n\n")
-                print(f"\nRobot đã di chuyển xong {steps} bước.")
-                print(f"Vị trí cuối cùng: ({x}, {y})")
-                print(f"Hướng cuối cùng: {direction_names[direction]}")
+                    state()
             else:
                 print("Số bước ko hợp lệ")
     elif user_input == "4":
@@ -81,24 +103,13 @@ while True:
         except ValueError:
             print("Vui lòng nhập một số hợp lệ.")
     elif user_input == "5":
-        print(f"Vị trí: ({x},{y})")
-        print(f"Hướng hiện tại: {direction_names[direction]}")
-        print(f"Tốc độ hiện tại: {speed}")
-        print(f"Cảm biến: Trái={left_sensor}, Giữa={center_sensor}, Phải={right_sensor}")
+        state()
         if is_running:
             print("Robot đang bật")
         else:
             print("Robot đang tắt")
     elif user_input == "6":
-        direction = 0  # 0: bắc, 1: đông, 2: nam, 3: tây
-        speed = 0
-        left_sensor = False
-        center_sensor = False
-        right_sensor = False
-        is_running = False
-        x = 0
-        y = 0
-        print("Đã reset robot")
+        resett(0,0) #new_x, new_y
     elif user_input == "0":
         print("bye")
         break
