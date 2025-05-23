@@ -322,6 +322,36 @@ while True:
             print("Robot đang bật")
         else:
             print("Robot đang tắt")
+    elif user_input == "6":
+        # Tạo vật cản ngẫu nhiên
+        try:
+            num_obstacles = int(input("Nhập số lượng vật cản muốn tạo: "))
+            if num_obstacles < 0:
+                print("Số lượng vật cản không thể âm.")
+                continue
+
+            # Xóa vật cản cũ
+            obstacles = []
+
+            # Tạo vật cản mới
+            for _ in range(num_obstacles):
+                obstacle_x = random.randint(-10, 20)
+                obstacle_y = random.randint(-10, 20)
+
+                # Đảm bảo vật cản không trùng với vị trí robot hoặc đích
+                if (obstacle_x, obstacle_y) != (x, y) and (obstacle_x, obstacle_y) != target_position:
+                    obstacles.append((obstacle_x, obstacle_y))
+
+            print(f"Đã tạo {len(obstacles)} vật cản ngẫu nhiên.")
+
+            # Hiển thị vị trí các vật cản
+            if obstacles:
+                print("Vị trí các vật cản:")
+                for i, (ox, oy) in enumerate(obstacles):
+                    print(f"  Vật cản {i+1}: ({ox}, {oy})")
+
+        except ValueError:
+            print("Vui lòng nhập một số nguyên.")
     elif user_input == "8":
         resett(0,0) #new_x, new_y
     elif user_input == "10":
