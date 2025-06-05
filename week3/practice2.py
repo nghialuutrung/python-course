@@ -159,7 +159,10 @@ def state():
     print(f"Vị trí: ({x},{y})")
     print(f"Hướng hiện tại: {direction_names[direction]}")
     print(f"Tốc độ hiện tại: {speed}")
+    print(f"Pin: {battery}")
     print(f"Cảm biến: Trái={left_sensor}, Giữa={front_sensor}, Phải={right_sensor}")
+    print(f"Vị trí đích: {target_position}")
+    print(f"Số lượng vật cản: {len(obstacles)}")
         
 while True:
     print("\n===== MÔ PHỎNG ROBOT ĐI THEO LINE =====")
@@ -326,17 +329,16 @@ while True:
         # Tạo vật cản ngẫu nhiên
         try:
             num_obstacles = int(input("Nhập số lượng vật cản muốn tạo: "))
-            if num_obstacles < 0:
+            if num_obstacles < 1:
                 print("Số lượng vật cản không thể âm.")
                 continue
 
             # Xóa vật cản cũ
             obstacles = []
-
             # Tạo vật cản mới
             for _ in range(num_obstacles):
-                obstacle_x = random.randint(-10, 20)
-                obstacle_y = random.randint(-10, 20)
+                obstacle_x = random.randint(-10, 40)
+                obstacle_y = random.randint(-10, 40)
 
                 # Đảm bảo vật cản không trùng với vị trí robot hoặc đích
                 if (obstacle_x, obstacle_y) != (x, y) and (obstacle_x, obstacle_y) != target_position:
