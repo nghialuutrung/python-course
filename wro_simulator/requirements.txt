@@ -1,0 +1,18 @@
+# WRO Python Robot Control System Requirements
+# Core dependencies for the interactive robot programming simulator
+
+# Main game engine for graphics and input handling
+pygame==2.6.1
+
+# Note: All other imports are from Python standard library:
+# - math: Mathematical functions for robot movement calculations
+# - threading: For potential future async operations
+# - queue: For thread-safe communication
+# - sys: System-specific parameters and functions
+# - traceback: For error handling and debugging
+# - time: Time-related functions for animations
+# - os: Operating system interface (currently unused but imported)
+# - io.StringIO: For capturing print output in console
+
+# Optional: For future enhancements
+fontawesome==5.10.1.post1  # Currently installed but not used in code
