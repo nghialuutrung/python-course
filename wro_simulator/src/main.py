@@ -40,8 +40,10 @@ class WROPythonControl:
         # Import console and sidebar here to avoid circular imports
         from .ui.console import PythonConsole
         from .ui.sidebar import Sidebar
+        from .ui.programming_guide import ProgrammingGuide
         self.console = PythonConsole(self.robot)
         self.sidebar = Sidebar()
+        self.programming_guide = ProgrammingGuide(self.screen)
         
         # Add level management to console namespace
         self.console.namespace['levels'] = self.level_manager
@@ -181,6 +183,10 @@ class WROPythonControl:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+
+            # Programming guide has priority for events
+            if self.programming_guide.handle_event(event):
+                continue
             
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -198,6 +204,10 @@ class WROPythonControl:
                 elif self.game_state == "PLAYING":
                     # Handle game input
                     if event.key == pygame.K_F1:
+                        # Show programming guide
+                        if self.current_level:
+                            self.programming_guide.show(self.current_level)
+                    elif event.key == pygame.K_F2:
                         # Quick objective check
                         self.check_level_objectives()
                     else:
@@ -231,7 +241,10 @@ class WROPythonControl:
         
         elif self.game_state == "LEVEL_COMPLETE":
             self.draw_level_complete()
-        
+
+        # Draw programming guide on top of everything
+        self.programming_guide.draw()
+
         pygame.display.flip()
     
     def draw_game(self):

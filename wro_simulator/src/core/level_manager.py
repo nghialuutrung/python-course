@@ -13,8 +13,10 @@ class LevelManager:
     
     def __init__(self):
         self.levels: Dict[int, BaseLevel] = {}
-        self.unlocked_levels: List[int] = [1]  # Level 1 is always unlocked
+        self.unlocked_levels: List[int] = []  # Will be populated after loading
         self.load_levels()
+        # Unlock all loaded levels for free exploration
+        self.unlocked_levels = list(self.levels.keys())
     
     def load_levels(self):
         """Dynamically load all levels from the levels directory"""

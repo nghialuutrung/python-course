@@ -220,7 +220,8 @@ class Sidebar:
         y = self.draw_section_header(screen, "Quick Help", y_start, "💡")
         
         help_items = [
-            "F1: Check objectives",
+            "F1: Programming Guide",
+            "F2: Check objectives",
             "ESC: Back to menu",
             "Mouse wheel: Scroll console",
             "",

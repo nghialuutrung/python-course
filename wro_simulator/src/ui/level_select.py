@@ -12,7 +12,9 @@ class LevelSelectScreen:
     
     def __init__(self, level_manager):
         self.level_manager = level_manager
-        self.selected_level = 1
+        # Start with first available level
+        available_levels = self.level_manager.get_available_levels()
+        self.selected_level = available_levels[0] if available_levels else 1
         self.font_large = pygame.font.Font(None, 42)
         self.font_medium = pygame.font.Font(None, 24)
         self.font_small = pygame.font.Font(None, 18)
@@ -80,19 +82,22 @@ class LevelSelectScreen:
         pygame.draw.circle(screen, WHITE, (robot_center[0] - 5, robot_center[1] - 3), 3)
         pygame.draw.circle(screen, WHITE, (robot_center[0] + 5, robot_center[1] - 3), 3)
         
-        # Subtitle
-        subtitle_text = self.font_medium.render("Master Python Programming Through Interactive Challenges", True, (150, 200, 255))
-        subtitle_rect = subtitle_text.get_rect(center=(SCREEN_WIDTH//2, 75))
-        screen.blit(subtitle_text, subtitle_rect)
+        # Subtitle with level count
+        total_levels = len(self.level_manager.levels)
+        available_levels = len(self.level_manager.get_available_levels())
+        subtitle_text = f"Master Python Programming • {available_levels}/{total_levels} Levels Available"
+        subtitle_surface = self.font_medium.render(subtitle_text, True, (150, 200, 255))
+        subtitle_rect = subtitle_surface.get_rect(center=(SCREEN_WIDTH//2, 75))
+        screen.blit(subtitle_surface, subtitle_rect)
         
         # Decorative line
         line_y = 95
         pygame.draw.line(screen, (100, 150, 200), (100, line_y), (SCREEN_WIDTH - 100, line_y), 2)
     
     def draw_level_cards(self, screen):
-        """Draw beautiful level cards"""
+        """Draw beautiful level cards with detailed info"""
         start_y = 120
-        card_height = 90
+        card_height = 100  # Increased height for more info
         card_spacing = 8
         card_width = SCREEN_WIDTH - 160
         
@@ -188,9 +193,22 @@ class LevelSelectScreen:
             desc_text = self.font_small.render(level.description, True, (200, 200, 200))
             screen.blit(desc_text, (text_x, card_rect.y + 30))
             
-            # Difficulty stars
+            # Difficulty stars and level type
             stars = "⭐" * level.difficulty
-            stars_text = self.font_small.render(f"Difficulty: {stars}", True, (255, 215, 0))
+
+            # Level type indicators
+            level_types = {
+                1: "🚀 Basic Movement",
+                2: "🔄 Navigation",
+                3: "💎 Collection",
+                4: "📡 Sensor Programming",
+                5: "🧭 Pathfinding",
+                6: "⏱️ Speed Challenge"
+            }
+
+            type_indicator = level_types.get(level.level_id, "🎯 Challenge")
+            difficulty_text = f"{type_indicator} • Difficulty: {stars}"
+            stars_text = self.font_small.render(difficulty_text, True, (255, 215, 0))
             screen.blit(stars_text, (text_x, card_rect.y + 50))
             
             # Status and completion info
