@@ -3,7 +3,6 @@ Level Selection Screen UI
 """
 
 import pygame
-import math
 from ..core.constants import *
 
 
@@ -15,6 +14,7 @@ class LevelSelectScreen:
         # Start with first available level
         available_levels = self.level_manager.get_available_levels()
         self.selected_level = available_levels[0] if available_levels else 1
+        self.scroll_offset = 0  # For scrolling through levels
         self.font_large = pygame.font.Font(None, 42)
         self.font_medium = pygame.font.Font(None, 24)
         self.font_small = pygame.font.Font(None, 18)
@@ -22,16 +22,25 @@ class LevelSelectScreen:
     def handle_key(self, key):
         """Handle keyboard input for level selection"""
         available_levels = self.level_manager.get_available_levels()
-        
+
         if key == pygame.K_UP:
             current_index = available_levels.index(self.selected_level) if self.selected_level in available_levels else 0
             new_index = max(0, current_index - 1)
             self.selected_level = available_levels[new_index]
-            
+
+            # Auto-scroll if needed
+            if new_index < self.scroll_offset:
+                self.scroll_offset = new_index
+
         elif key == pygame.K_DOWN:
             current_index = available_levels.index(self.selected_level) if self.selected_level in available_levels else 0
             new_index = min(len(available_levels) - 1, current_index + 1)
             self.selected_level = available_levels[new_index]
+
+            # Auto-scroll if needed
+            max_visible = 5  # Approximate visible cards
+            if new_index >= self.scroll_offset + max_visible:
+                self.scroll_offset = new_index - max_visible + 1
             
         elif key == pygame.K_RETURN:
             if self.level_manager.is_level_unlocked(self.selected_level):
@@ -49,7 +58,10 @@ class LevelSelectScreen:
         
         # Level cards with improved design
         self.draw_level_cards(screen)
-        
+
+        # Scroll indicators
+        self.draw_scroll_indicators(screen)
+
         # Footer with instructions and progress
         self.draw_footer(screen)
     
@@ -97,17 +109,32 @@ class LevelSelectScreen:
     def draw_level_cards(self, screen):
         """Draw beautiful level cards with detailed info"""
         start_y = 120
-        card_height = 100  # Increased height for more info
-        card_spacing = 8
+        card_height = 80  # Reduced height to fit more cards
+        card_spacing = 6   # Reduced spacing
         card_width = SCREEN_WIDTH - 160
-        
-        for level_id in sorted(self.level_manager.levels.keys()):
+
+        # Calculate how many cards can fit on screen
+        available_height = SCREEN_HEIGHT - start_y - 100  # Leave space for footer
+        max_visible_cards = available_height // (card_height + card_spacing)
+
+        # Get all levels and apply scrolling
+        all_levels = sorted(self.level_manager.levels.keys())
+        total_levels = len(all_levels)
+
+        # Ensure scroll offset is within bounds
+        max_scroll = max(0, total_levels - max_visible_cards)
+        self.scroll_offset = max(0, min(self.scroll_offset, max_scroll))
+
+        # Only show visible levels
+        visible_levels = all_levels[self.scroll_offset:self.scroll_offset + max_visible_cards]
+
+        for i, level_id in enumerate(visible_levels):
             level = self.level_manager.get_level(level_id)
             is_unlocked = self.level_manager.is_level_unlocked(level_id)
             is_selected = level_id == self.selected_level
             
-            # Card position
-            card_y = start_y + (level_id - 1) * (card_height + card_spacing)
+            # Card position using visible index
+            card_y = start_y + i * (card_height + card_spacing)
             card_rect = pygame.Rect(80, card_y, card_width, card_height)
             
             # Draw the card
@@ -183,46 +210,46 @@ class LevelSelectScreen:
         text_x = card_rect.x + 70  # Start after icon
         
         if is_unlocked:
-            # Level title
-            title_font = pygame.font.Font(None, 26)
+            # Level title - more compact
+            title_font = pygame.font.Font(None, 22)
             level_title = f"Level {level.level_id}: {level.name}"
             title_text = title_font.render(level_title, True, WHITE)
-            screen.blit(title_text, (text_x, card_rect.y + 8))
-            
-            # Description
+            screen.blit(title_text, (text_x, card_rect.y + 6))
+
+            # Description - smaller font
             desc_text = self.font_small.render(level.description, True, (200, 200, 200))
-            screen.blit(desc_text, (text_x, card_rect.y + 30))
-            
-            # Difficulty stars and level type
+            screen.blit(desc_text, (text_x, card_rect.y + 26))
+
+            # Compact difficulty and type info
             stars = "⭐" * level.difficulty
 
-            # Level type indicators
+            # Level type indicators - shorter
             level_types = {
-                1: "🚀 Basic Movement",
+                1: "🚀 Movement",
                 2: "🔄 Navigation",
                 3: "💎 Collection",
-                4: "📡 Sensor Programming",
+                4: "📡 Sensors",
                 5: "🧭 Pathfinding",
-                6: "⏱️ Speed Challenge"
+                6: "⏱️ Speed"
             }
 
             type_indicator = level_types.get(level.level_id, "🎯 Challenge")
-            difficulty_text = f"{type_indicator} • Difficulty: {stars}"
+            difficulty_text = f"{type_indicator} • {stars}"
             stars_text = self.font_small.render(difficulty_text, True, (255, 215, 0))
-            screen.blit(stars_text, (text_x, card_rect.y + 50))
+            screen.blit(stars_text, (text_x, card_rect.y + 44))
             
-            # Status and completion info
+            # Status and completion info - more compact
             if level.completed:
-                status_text = self.font_small.render("✅ Completed", True, (100, 255, 100))
-                screen.blit(status_text, (text_x, card_rect.y + 68))
-                
-                # Best time
+                status_text = self.font_small.render("✅ Done", True, (100, 255, 100))
+                screen.blit(status_text, (text_x, card_rect.y + 60))
+
+                # Best time - more compact
                 if level.best_time:
-                    time_text = self.font_small.render(f"Best: {level.best_time:.1f}s", True, (150, 200, 255))
-                    screen.blit(time_text, (card_rect.right - 120, card_rect.y + 68))
+                    time_text = self.font_small.render(f"{level.best_time:.1f}s", True, (150, 200, 255))
+                    screen.blit(time_text, (card_rect.right - 80, card_rect.y + 60))
             else:
-                status_text = self.font_small.render("🎯 Ready to play", True, (100, 200, 255))
-                screen.blit(status_text, (text_x, card_rect.y + 68))
+                status_text = self.font_small.render("🎯 Ready", True, (100, 200, 255))
+                screen.blit(status_text, (text_x, card_rect.y + 60))
         else:
             # Locked level
             title_text = self.font_medium.render(f"Level {level.level_id}: ???", True, (120, 120, 120))
@@ -230,7 +257,29 @@ class LevelSelectScreen:
             
             lock_desc = self.font_small.render("Complete previous level to unlock", True, (100, 100, 100))
             screen.blit(lock_desc, (text_x, card_rect.y + 40))
-    
+
+    def draw_scroll_indicators(self, screen):
+        """Draw scroll indicators if needed"""
+        all_levels = sorted(self.level_manager.levels.keys())
+        total_levels = len(all_levels)
+
+        # Calculate visible range
+        available_height = SCREEN_HEIGHT - 120 - 100  # start_y to footer
+        card_height = 80
+        card_spacing = 6
+        max_visible_cards = available_height // (card_height + card_spacing)
+
+        if total_levels > max_visible_cards:
+            # Show scroll up indicator
+            if self.scroll_offset > 0:
+                up_text = self.font_small.render("▲ More levels above", True, (150, 150, 255))
+                screen.blit(up_text, (SCREEN_WIDTH - 200, 100))
+
+            # Show scroll down indicator
+            if self.scroll_offset + max_visible_cards < total_levels:
+                down_text = self.font_small.render("▼ More levels below", True, (150, 150, 255))
+                screen.blit(down_text, (SCREEN_WIDTH - 200, SCREEN_HEIGHT - 150))
+
     def draw_footer(self, screen):
         """Draw footer with instructions and progress"""
         footer_y = SCREEN_HEIGHT - 120
