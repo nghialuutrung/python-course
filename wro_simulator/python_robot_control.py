@@ -58,6 +58,216 @@ HUD_BG = (255, 255, 255)  # White background
 HUD_BORDER = (206, 212, 218)
 HUD_TEXT = (33, 37, 41)
 
+class Level:
+    """Represents a game level with objectives and constraints"""
+
+    def __init__(self, level_id, name, description, difficulty, objectives,
+                 obstacles=None, items=None, target_area=None, time_limit=None,
+                 allowed_commands=None, hints=None):
+        self.level_id = level_id
+        self.name = name
+        self.description = description
+        self.difficulty = difficulty  # 1-5 stars
+        self.objectives = objectives  # List of objectives to complete
+        self.obstacles = obstacles or []
+        self.items = items or []
+        self.target_area = target_area
+        self.time_limit = time_limit  # seconds, None for unlimited
+        self.allowed_commands = allowed_commands  # None for all commands
+        self.hints = hints or []
+        self.completed = False
+        self.best_score = 0
+        self.best_time = None
+
+    def is_objective_completed(self, robot):
+        """Check if level objectives are completed"""
+        for objective in self.objectives:
+            if not self._check_objective(objective, robot):
+                return False
+        return True
+
+    def _check_objective(self, objective, robot):
+        """Check individual objective"""
+        obj_type = objective.get('type')
+
+        if obj_type == 'reach_target':
+            target = objective.get('target', (10, 10))
+            tolerance = objective.get('tolerance', 1.0)
+            robot_pos = (robot.x / 50, robot.y / 50)
+            distance = math.sqrt((robot_pos[0] - target[0])**2 + (robot_pos[1] - target[1])**2)
+            return distance <= tolerance
+
+        elif obj_type == 'collect_items':
+            required = objective.get('count', 1)
+            return robot.items_collected >= required
+
+        elif obj_type == 'avoid_obstacles':
+            # Check if robot never hit obstacles (could track collisions)
+            return True  # Simplified for now
+
+        elif obj_type == 'use_sensors':
+            required_calls = objective.get('sensor_calls', 1)
+            return robot.sensor_calls >= required_calls
+
+        elif obj_type == 'efficient_path':
+            max_commands = objective.get('max_commands', 10)
+            return robot.commands_executed <= max_commands
+
+        return False
+
+class LevelManager:
+    """Manages game levels and progression"""
+
+    def __init__(self):
+        self.levels = self._create_levels()
+        self.current_level = None
+        self.unlocked_levels = [1]  # Level 1 is always unlocked
+
+    def _create_levels(self):
+        """Create all game levels"""
+        levels = {}
+
+        # Level 1: Basic Movement
+        levels[1] = Level(
+            level_id=1,
+            name="First Steps",
+            description="Learn basic robot movement commands",
+            difficulty=1,
+            objectives=[
+                {'type': 'reach_target', 'target': (5, 5), 'tolerance': 1.0}
+            ],
+            obstacles=[],
+            items=[],
+            target_area={'x': 200, 'y': 200, 'width': 100, 'height': 100},
+            hints=[
+                "Use robot.forward() to move forward",
+                "Use robot.right() to turn right",
+                "Try: robot.forward(5); robot.right(); robot.forward(5)"
+            ]
+        )
+
+        # Level 2: Turning and Navigation
+        levels[2] = Level(
+            level_id=2,
+            name="Turn Around",
+            description="Master turning and basic navigation",
+            difficulty=1,
+            objectives=[
+                {'type': 'reach_target', 'target': (8, 2), 'tolerance': 1.0}
+            ],
+            obstacles=[
+                {'x': 150, 'y': 150, 'width': 100, 'height': 50}
+            ],
+            items=[],
+            target_area={'x': 350, 'y': 50, 'width': 100, 'height': 100},
+            hints=[
+                "You need to go around the obstacle",
+                "Use robot.left() and robot.right() to turn",
+                "Plan your path before coding"
+            ]
+        )
+
+        # Level 3: Item Collection
+        levels[3] = Level(
+            level_id=3,
+            name="Treasure Hunt",
+            description="Collect items while navigating",
+            difficulty=2,
+            objectives=[
+                {'type': 'collect_items', 'count': 2},
+                {'type': 'reach_target', 'target': (10, 8), 'tolerance': 1.0}
+            ],
+            obstacles=[
+                {'x': 100, 'y': 200, 'width': 50, 'height': 100}
+            ],
+            items=[
+                {'x': 150, 'y': 100, 'type': 'coin'},
+                {'x': 300, 'y': 300, 'type': 'coin'}
+            ],
+            target_area={'x': 450, 'y': 350, 'width': 100, 'height': 100},
+            hints=[
+                "Use robot.collect() when near items",
+                "Items glow when you're close enough",
+                "Collect all items before reaching target"
+            ]
+        )
+
+        # Level 4: Sensor Usage
+        levels[4] = Level(
+            level_id=4,
+            name="Sensor Navigation",
+            description="Use sensors to navigate safely",
+            difficulty=2,
+            objectives=[
+                {'type': 'use_sensors', 'sensor_calls': 3},
+                {'type': 'reach_target', 'target': (9, 9), 'tolerance': 1.0},
+                {'type': 'avoid_obstacles'}
+            ],
+            obstacles=[
+                {'x': 200, 'y': 100, 'width': 50, 'height': 200},
+                {'x': 350, 'y': 250, 'width': 100, 'height': 50}
+            ],
+            items=[],
+            target_area={'x': 400, 'y': 400, 'width': 100, 'height': 100},
+            hints=[
+                "Use robot.sensor() to check distances",
+                "Check sensors before moving",
+                "if robot.front_sensor() < 1: robot.left()"
+            ]
+        )
+
+        # Level 5: Efficient Programming
+        levels[5] = Level(
+            level_id=5,
+            name="Code Golf",
+            description="Reach target with minimal commands",
+            difficulty=3,
+            objectives=[
+                {'type': 'reach_target', 'target': (8, 8), 'tolerance': 1.0},
+                {'type': 'efficient_path', 'max_commands': 8}
+            ],
+            obstacles=[
+                {'x': 150, 'y': 150, 'width': 200, 'height': 50},
+                {'x': 300, 'y': 300, 'width': 50, 'height': 150}
+            ],
+            items=[],
+            target_area={'x': 350, 'y': 350, 'width': 100, 'height': 100},
+            hints=[
+                "Use the shortest path possible",
+                "Combine movements efficiently",
+                "robot.move_to() might help"
+            ]
+        )
+
+        return levels
+
+    def get_level(self, level_id):
+        """Get level by ID"""
+        return self.levels.get(level_id)
+
+    def is_level_unlocked(self, level_id):
+        """Check if level is unlocked"""
+        return level_id in self.unlocked_levels
+
+    def unlock_level(self, level_id):
+        """Unlock a level"""
+        if level_id not in self.unlocked_levels:
+            self.unlocked_levels.append(level_id)
+
+    def complete_level(self, level_id, score, time_taken):
+        """Mark level as completed"""
+        level = self.get_level(level_id)
+        if level:
+            level.completed = True
+            level.best_score = max(level.best_score, score)
+            if level.best_time is None or time_taken < level.best_time:
+                level.best_time = time_taken
+
+            # Unlock next level
+            next_level = level_id + 1
+            if next_level in self.levels:
+                self.unlock_level(next_level)
+
 class IconRenderer:
     """Simple icon renderer using pygame shapes"""
 
@@ -133,6 +343,276 @@ class IconRenderer:
         # Center dot
         pygame.draw.circle(surface, color, center, 2)
 
+class LevelSelectScreen:
+    """Level selection screen for the game"""
+
+    def __init__(self, level_manager):
+        self.level_manager = level_manager
+        self.selected_level = 1
+        self.font_large = pygame.font.Font(None, 36)
+        self.font_medium = pygame.font.Font(None, 24)
+        self.font_small = pygame.font.Font(None, 18)
+
+    def handle_key(self, key):
+        """Handle keyboard input for level selection"""
+        if key == pygame.K_UP:
+            self.selected_level = max(1, self.selected_level - 1)
+        elif key == pygame.K_DOWN:
+            max_level = max(self.level_manager.unlocked_levels)
+            self.selected_level = min(max_level, self.selected_level + 1)
+        elif key == pygame.K_RETURN:
+            if self.level_manager.is_level_unlocked(self.selected_level):
+                return self.selected_level
+        return None
+
+    def draw(self, screen):
+        """Draw beautiful level selection screen"""
+        # Gradient background
+        self.draw_gradient_background(screen)
+
+        # Header section with modern styling
+        self.draw_header(screen)
+
+        # Level cards with improved design
+        self.draw_level_cards(screen)
+
+        # Footer with instructions and progress
+        self.draw_footer(screen)
+
+    def draw_gradient_background(self, screen):
+        """Draw gradient background"""
+        # Create gradient from dark blue to black
+        for y in range(SCREEN_HEIGHT):
+            ratio = y / SCREEN_HEIGHT
+            r = int(20 * (1 - ratio) + 10 * ratio)
+            g = int(30 * (1 - ratio) + 15 * ratio)
+            b = int(50 * (1 - ratio) + 25 * ratio)
+            color = (r, g, b)
+            pygame.draw.line(screen, color, (0, y), (SCREEN_WIDTH, y))
+
+    def draw_header(self, screen):
+        """Draw modern header section"""
+        # Main title with shadow effect
+        title_font = pygame.font.Font(None, 42)
+        shadow_text = title_font.render("WRO Robot Programming Academy", True, (20, 20, 20))
+        main_text = title_font.render("WRO Robot Programming Academy", True, WHITE)
+
+        title_rect = main_text.get_rect(center=(SCREEN_WIDTH//2, 45))
+        shadow_rect = shadow_text.get_rect(center=(SCREEN_WIDTH//2 + 2, 47))
+
+        screen.blit(shadow_text, shadow_rect)
+        screen.blit(main_text, title_rect)
+
+        # Robot icon
+        robot_center = (SCREEN_WIDTH//2 - 200, 45)
+        pygame.draw.circle(screen, BLUE, robot_center, 15)
+        pygame.draw.circle(screen, WHITE, robot_center, 15, 2)
+        pygame.draw.circle(screen, WHITE, (robot_center[0] - 5, robot_center[1] - 3), 3)
+        pygame.draw.circle(screen, WHITE, (robot_center[0] + 5, robot_center[1] - 3), 3)
+
+        # Subtitle with better styling
+        subtitle_text = self.font_medium.render("Master Python Programming Through Interactive Challenges", True, (150, 200, 255))
+        subtitle_rect = subtitle_text.get_rect(center=(SCREEN_WIDTH//2, 75))
+        screen.blit(subtitle_text, subtitle_rect)
+
+        # Decorative line
+        line_y = 95
+        pygame.draw.line(screen, (100, 150, 200), (100, line_y), (SCREEN_WIDTH - 100, line_y), 2)
+
+    def draw_level_cards(self, screen):
+        """Draw beautiful level cards"""
+        start_y = 120
+        card_height = 90
+        card_spacing = 8
+        card_width = SCREEN_WIDTH - 160
+
+        for level_id in sorted(self.level_manager.levels.keys()):
+            level = self.level_manager.get_level(level_id)
+            is_unlocked = self.level_manager.is_level_unlocked(level_id)
+            is_selected = level_id == self.selected_level
+
+            # Card position
+            card_y = start_y + (level_id - 1) * (card_height + card_spacing)
+            card_rect = pygame.Rect(80, card_y, card_width, card_height)
+
+            # Card styling with modern effects
+            self.draw_level_card(screen, card_rect, level, is_unlocked, is_selected)
+
+    def draw_level_card(self, screen, card_rect, level, is_unlocked, is_selected):
+        """Draw individual level card with modern styling"""
+        # Card shadow
+        shadow_rect = pygame.Rect(card_rect.x + 3, card_rect.y + 3, card_rect.width, card_rect.height)
+        pygame.draw.rect(screen, (10, 10, 10), shadow_rect, border_radius=12)
+
+        # Card background with gradient effect
+        if is_selected and is_unlocked:
+            # Bright blue gradient for selected unlocked
+            self.draw_card_gradient(screen, card_rect, (70, 130, 220), (50, 110, 200))
+            border_color = (255, 255, 255)
+            border_width = 3
+        elif is_unlocked:
+            # Subtle blue gradient for unlocked
+            self.draw_card_gradient(screen, card_rect, (45, 55, 75), (35, 45, 65))
+            border_color = (100, 150, 200)
+            border_width = 2
+        else:
+            # Dark gradient for locked
+            self.draw_card_gradient(screen, card_rect, (30, 30, 30), (20, 20, 20))
+            border_color = (60, 60, 60)
+            border_width = 1
+
+        # Card border
+        pygame.draw.rect(screen, border_color, card_rect, border_width, border_radius=12)
+
+        # Level content
+        self.draw_card_content(screen, card_rect, level, is_unlocked, is_selected)
+
+    def draw_card_gradient(self, screen, rect, color1, color2):
+        """Draw gradient background for card"""
+        for y in range(rect.height):
+            ratio = y / rect.height
+            r = int(color1[0] * (1 - ratio) + color2[0] * ratio)
+            g = int(color1[1] * (1 - ratio) + color2[1] * ratio)
+            b = int(color1[2] * (1 - ratio) + color2[2] * ratio)
+            color = (r, g, b)
+            pygame.draw.line(screen, color,
+                           (rect.x, rect.y + y),
+                           (rect.x + rect.width, rect.y + y))
+
+    def draw_card_content(self, screen, card_rect, level, is_unlocked, is_selected):
+        """Draw content inside level card"""
+        # Level icon/number circle
+        icon_center = (card_rect.x + 35, card_rect.y + 30)
+        icon_radius = 20
+
+        if is_unlocked:
+            # Colorful icon for unlocked levels
+            icon_color = (255, 215, 0) if level.completed else (100, 200, 255)
+            pygame.draw.circle(screen, icon_color, icon_center, icon_radius)
+            pygame.draw.circle(screen, WHITE, icon_center, icon_radius, 2)
+
+            # Level number
+            number_font = pygame.font.Font(None, 28)
+            number_text = number_font.render(str(level.level_id), True, BLACK)
+            number_rect = number_text.get_rect(center=icon_center)
+            screen.blit(number_text, number_rect)
+        else:
+            # Lock icon for locked levels
+            pygame.draw.circle(screen, (60, 60, 60), icon_center, icon_radius)
+            pygame.draw.circle(screen, (100, 100, 100), icon_center, icon_radius, 2)
+
+            # Lock symbol
+            lock_font = pygame.font.Font(None, 24)
+            lock_text = lock_font.render("🔒", True, (150, 150, 150))
+            lock_rect = lock_text.get_rect(center=icon_center)
+            screen.blit(lock_text, lock_rect)
+
+        # Level text content
+        text_x = card_rect.x + 70  # Start after icon
+
+        if is_unlocked:
+            # Level title
+            title_font = pygame.font.Font(None, 26)
+            level_title = f"Level {level.level_id}: {level.name}"
+            title_text = title_font.render(level_title, True, WHITE)
+            screen.blit(title_text, (text_x, card_rect.y + 8))
+
+            # Description
+            desc_text = self.font_small.render(level.description, True, (200, 200, 200))
+            screen.blit(desc_text, (text_x, card_rect.y + 30))
+
+            # Difficulty stars
+            stars = "⭐" * level.difficulty
+            stars_text = self.font_small.render(f"Difficulty: {stars}", True, (255, 215, 0))
+            screen.blit(stars_text, (text_x, card_rect.y + 50))
+
+            # Status and completion info
+            if level.completed:
+                status_text = self.font_small.render("✅ Completed", True, (100, 255, 100))
+                screen.blit(status_text, (text_x, card_rect.y + 68))
+
+                # Best time
+                if level.best_time:
+                    time_text = self.font_small.render(f"Best: {level.best_time:.1f}s", True, (150, 200, 255))
+                    screen.blit(time_text, (card_rect.right - 120, card_rect.y + 68))
+            else:
+                status_text = self.font_small.render("🎯 Ready to play", True, (100, 200, 255))
+                screen.blit(status_text, (text_x, card_rect.y + 68))
+        else:
+            # Locked level
+            title_text = self.font_medium.render(f"Level {level.level_id}: ???", True, (120, 120, 120))
+            screen.blit(title_text, (text_x, card_rect.y + 15))
+
+            lock_desc = self.font_small.render("Complete previous level to unlock", True, (100, 100, 100))
+            screen.blit(lock_desc, (text_x, card_rect.y + 40))
+
+    def draw_footer(self, screen):
+        """Draw footer with instructions and progress"""
+        footer_y = SCREEN_HEIGHT - 120
+
+        # Footer background
+        footer_rect = pygame.Rect(0, footer_y, SCREEN_WIDTH, 120)
+        footer_surface = pygame.Surface((SCREEN_WIDTH, 120))
+        footer_surface.set_alpha(180)
+        footer_surface.fill((15, 25, 35))
+        screen.blit(footer_surface, (0, footer_y))
+
+        # Instructions panel
+        inst_panel_rect = pygame.Rect(50, footer_y + 20, 300, 80)
+        pygame.draw.rect(screen, (25, 35, 45), inst_panel_rect, border_radius=8)
+        pygame.draw.rect(screen, (100, 150, 200), inst_panel_rect, 2, border_radius=8)
+
+        # Instructions title
+        inst_title = self.font_medium.render("🎮 Controls", True, (150, 200, 255))
+        screen.blit(inst_title, (inst_panel_rect.x + 15, inst_panel_rect.y + 8))
+
+        # Instructions
+        instructions = [
+            "↑↓  Navigate levels",
+            "⏎   Select level",
+            "⎋   Exit game"
+        ]
+
+        for i, instruction in enumerate(instructions):
+            inst_text = self.font_small.render(instruction, True, (200, 200, 200))
+            screen.blit(inst_text, (inst_panel_rect.x + 15, inst_panel_rect.y + 30 + i * 16))
+
+        # Progress panel
+        progress_panel_rect = pygame.Rect(SCREEN_WIDTH - 350, footer_y + 20, 300, 80)
+        pygame.draw.rect(screen, (25, 35, 45), progress_panel_rect, border_radius=8)
+        pygame.draw.rect(screen, (100, 200, 100), progress_panel_rect, 2, border_radius=8)
+
+        # Progress title
+        progress_title = self.font_medium.render("📊 Progress", True, (150, 255, 150))
+        screen.blit(progress_title, (progress_panel_rect.x + 15, progress_panel_rect.y + 8))
+
+        # Progress stats
+        completed_levels = sum(1 for level in self.level_manager.levels.values() if level.completed)
+        total_levels = len(self.level_manager.levels)
+
+        progress_text = self.font_small.render(f"Completed: {completed_levels}/{total_levels} levels", True, (200, 255, 200))
+        screen.blit(progress_text, (progress_panel_rect.x + 15, progress_panel_rect.y + 30))
+
+        # Progress bar
+        bar_width = 200
+        bar_height = 8
+        bar_x = progress_panel_rect.x + 15
+        bar_y = progress_panel_rect.y + 50
+
+        # Background bar
+        pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height), border_radius=4)
+
+        # Progress bar fill
+        if total_levels > 0:
+            fill_width = int((completed_levels / total_levels) * bar_width)
+            if fill_width > 0:
+                pygame.draw.rect(screen, (100, 255, 100), (bar_x, bar_y, fill_width, bar_height), border_radius=4)
+
+        # Percentage
+        percentage = int((completed_levels / total_levels) * 100) if total_levels > 0 else 0
+        percent_text = self.font_small.render(f"{percentage}%", True, (150, 255, 150))
+        screen.blit(percent_text, (bar_x + bar_width + 10, bar_y - 2))
+
 class PythonRobot:
     """Robot class that students can control with Python commands"""
     
@@ -147,6 +627,9 @@ class PythonRobot:
         self.score = 0
         self.items_collected = 0
         self.commands_executed = 0
+        self.sensor_calls = 0
+        self.start_time = None
+        self.level_start_time = None
         
         # Animation
         self.target_x = x
@@ -164,6 +647,7 @@ class PythonRobot:
         
     def forward(self, distance=1):
         """Move robot forward by distance units (1 unit = 50 pixels)"""
+        self.commands_executed += 1
         pixel_distance = distance * 50  # Convert units to pixels
         print(f">> Moving forward {distance} units ({pixel_distance} pixels)...")
 
@@ -194,6 +678,7 @@ class PythonRobot:
     
     def left(self, angle=90):
         """Turn robot left by angle degrees (default 90°)"""
+        self.commands_executed += 1
         print(f">> Turning left {angle} degrees...")
 
         self.position_history.append((self.x, self.y, self.angle))
@@ -208,6 +693,7 @@ class PythonRobot:
 
     def right(self, angle=90):
         """Turn robot right by angle degrees (default 90°)"""
+        self.commands_executed += 1
         print(f">> Turning right {angle} degrees...")
 
         self.position_history.append((self.x, self.y, self.angle))
@@ -222,6 +708,7 @@ class PythonRobot:
     
     def sensor(self):
         """Get sensor readings"""
+        self.sensor_calls += 1
         readings = {
             'front': self.get_distance_to_obstacle(0),
             'left': self.get_distance_to_obstacle(-90),
@@ -234,18 +721,21 @@ class PythonRobot:
 
     def front_sensor(self):
         """Get front sensor reading only"""
+        self.sensor_calls += 1
         distance = self.get_distance_to_obstacle(0)
         print(f">> Front sensor: {distance}")
         return distance
 
     def left_sensor(self):
         """Get left sensor reading only"""
+        self.sensor_calls += 1
         distance = self.get_distance_to_obstacle(-90)
         print(f">> Left sensor: {distance}")
         return distance
 
     def right_sensor(self):
         """Get right sensor reading only"""
+        self.sensor_calls += 1
         distance = self.get_distance_to_obstacle(90)
         print(f">> Right sensor: {distance}")
         return distance
@@ -290,6 +780,32 @@ class PythonRobot:
         self.commands_executed = 0
         print("🔄 Robot reset to starting position")
         return "Robot reset"
+
+    def reset_for_level(self, level):
+        """Reset robot for a specific level"""
+        self.x = self.target_x = 100
+        self.y = self.target_y = 100
+        self.angle = self.target_angle = 0
+        self.position_history = [(100, 100, 0)]
+        self.animating = False
+
+        # Reset game metrics
+        self.score = 0
+        self.items_collected = 0
+        self.commands_executed = 0
+        self.sensor_calls = 0
+        self.level_start_time = time.time()
+
+        print(f"🎯 Starting Level {level.level_id}: {level.name}")
+        print(f"📝 Objective: {level.description}")
+
+        # Show hints for difficulty 1-2 levels
+        if level.difficulty <= 2 and level.hints:
+            print("💡 Hints:")
+            for hint in level.hints[:2]:  # Show first 2 hints
+                print(f"   • {hint}")
+
+        return f"Level {level.level_id} started"
     
     def status(self):
         """Get robot status"""
@@ -819,19 +1335,142 @@ class WROPythonControl:
     
     def __init__(self):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("WRO Python Robot Control - Interactive Learning")
+        pygame.display.set_caption("WRO Python Robot Control - Level-based Learning")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 24)
-        
+
+        # Game state management
+        self.game_state = "LEVEL_SELECT"  # LEVEL_SELECT, PLAYING, LEVEL_COMPLETE
+        self.level_manager = LevelManager()
+        self.level_select_screen = LevelSelectScreen(self.level_manager)
+        self.current_level = None
+        self.level_start_time = None
+
         # Create robot and console
         self.robot = PythonRobot()
         self.console = PythonConsole(self.robot)
-        
-        # Setup environment
-        self.setup_environment()
-        
+
+        # Add level management to console namespace
+        self.console.namespace['levels'] = self.level_manager
+        self.console.namespace['start_level'] = self.start_level
+        self.console.namespace['check_objectives'] = self.check_level_objectives
+
         self.running = True
-    
+
+    def start_level(self, level_id):
+        """Start a specific level"""
+        level = self.level_manager.get_level(level_id)
+        if not level:
+            print(f"ERROR: Level {level_id} not found")
+            return
+
+        if not self.level_manager.is_level_unlocked(level_id):
+            print(f"ERROR: Level {level_id} is locked")
+            return
+
+        self.current_level = level
+        self.game_state = "PLAYING"
+        self.level_start_time = time.time()
+
+        # Setup level environment
+        self.setup_level_environment(level)
+
+        # Reset robot for this level
+        self.robot.reset_for_level(level)
+
+        return f"Started Level {level_id}: {level.name}"
+
+    def setup_level_environment(self, level):
+        """Setup environment for specific level"""
+        # Set obstacles from level
+        self.robot.obstacles = level.obstacles.copy()
+
+        # Set items from level
+        self.robot.items = level.items.copy()
+
+        print(f"🎮 Level environment loaded: {len(level.obstacles)} obstacles, {len(level.items)} items")
+
+    def check_level_objectives(self):
+        """Check if current level objectives are completed"""
+        if not self.current_level:
+            print("ERROR: No level is currently active")
+            return False
+
+        if self.current_level.is_objective_completed(self.robot):
+            self.complete_level()
+            return True
+        else:
+            # Show progress
+            self.show_level_progress()
+            return False
+
+    def complete_level(self):
+        """Complete current level"""
+        if not self.current_level:
+            return
+
+        # Calculate score and time
+        time_taken = time.time() - self.level_start_time
+        score = self.calculate_level_score(time_taken)
+
+        # Mark level as completed
+        self.level_manager.complete_level(self.current_level.level_id, score, time_taken)
+
+        print(f"🎉 LEVEL {self.current_level.level_id} COMPLETED!")
+        print(f"⏱️  Time: {time_taken:.1f} seconds")
+        print(f"⭐ Score: {score}")
+        print(f"🤖 Commands used: {self.robot.commands_executed}")
+        print(f"📡 Sensor calls: {self.robot.sensor_calls}")
+
+        # Check if next level is unlocked
+        next_level = self.current_level.level_id + 1
+        if next_level in self.level_manager.levels:
+            print(f"🔓 Level {next_level} unlocked!")
+
+        self.game_state = "LEVEL_COMPLETE"
+
+    def calculate_level_score(self, time_taken):
+        """Calculate score based on performance"""
+        base_score = 100
+
+        # Time bonus (faster = better)
+        time_bonus = max(0, 50 - int(time_taken))
+
+        # Efficiency bonus (fewer commands = better)
+        efficiency_bonus = max(0, 20 - self.robot.commands_executed)
+
+        # Sensor usage bonus (using sensors = better)
+        sensor_bonus = min(10, self.robot.sensor_calls * 2)
+
+        total_score = base_score + time_bonus + efficiency_bonus + sensor_bonus
+        return total_score
+
+    def show_level_progress(self):
+        """Show current level progress"""
+        level = self.current_level
+        print(f"📊 Level {level.level_id} Progress:")
+
+        for i, objective in enumerate(level.objectives):
+            completed = level._check_objective(objective, self.robot)
+            status = "✅" if completed else "❌"
+            obj_type = objective.get('type', 'unknown')
+
+            if obj_type == 'reach_target':
+                target = objective.get('target')
+                print(f"  {status} Reach target position {target}")
+            elif obj_type == 'collect_items':
+                required = objective.get('count', 1)
+                current = self.robot.items_collected
+                print(f"  {status} Collect items: {current}/{required}")
+            elif obj_type == 'use_sensors':
+                required = objective.get('sensor_calls', 1)
+                current = self.robot.sensor_calls
+                print(f"  {status} Use sensors: {current}/{required}")
+            elif obj_type == 'efficient_path':
+                max_commands = objective.get('max_commands', 10)
+                current = self.robot.commands_executed
+                print(f"  {status} Efficient path: {current}/{max_commands} commands")
+
     def setup_environment(self):
         """Setup obstacles and items"""
         # Add obstacles
@@ -852,19 +1491,38 @@ class WROPythonControl:
         ]
     
     def handle_events(self):
-        """Handle pygame events"""
+        """Handle pygame events based on game state"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    self.running = False
-                else:
-                    # Pass key to console
-                    self.console.handle_key(event.key, event.unicode)
+                    if self.game_state == "PLAYING":
+                        self.game_state = "LEVEL_SELECT"
+                    else:
+                        self.running = False
 
-            elif event.type == pygame.MOUSEWHEEL:
+                elif self.game_state == "LEVEL_SELECT":
+                    # Handle level selection
+                    selected_level = self.level_select_screen.handle_key(event.key)
+                    if selected_level:
+                        self.start_level(selected_level)
+
+                elif self.game_state == "PLAYING":
+                    # Handle game input
+                    if event.key == pygame.K_F1:
+                        # Quick objective check
+                        self.check_level_objectives()
+                    else:
+                        # Pass key to console
+                        self.console.handle_key(event.key, event.unicode)
+
+                elif self.game_state == "LEVEL_COMPLETE":
+                    # Any key to return to level select
+                    self.game_state = "LEVEL_SELECT"
+
+            elif event.type == pygame.MOUSEWHEEL and self.game_state == "PLAYING":
                 # Handle mouse wheel for console scrolling
                 mouse_x, _ = pygame.mouse.get_pos()
                 # Check if mouse is over console area
@@ -877,7 +1535,20 @@ class WROPythonControl:
         self.console.update(dt)
     
     def draw(self):
-        """Draw everything"""
+        """Draw everything based on game state"""
+        if self.game_state == "LEVEL_SELECT":
+            self.level_select_screen.draw(self.screen)
+
+        elif self.game_state == "PLAYING":
+            self.draw_game()
+
+        elif self.game_state == "LEVEL_COMPLETE":
+            self.draw_level_complete()
+
+        pygame.display.flip()
+
+    def draw_game(self):
+        """Draw the main game screen"""
         # Clear screen with modern background
         self.screen.fill(BACKGROUND)
 
@@ -947,8 +1618,93 @@ class WROPythonControl:
         
         # Draw console
         self.console.draw(self.screen)
-        
-        pygame.display.flip()
+
+        # Draw level info overlay
+        if self.current_level:
+            self.draw_level_info()
+
+    def draw_level_complete(self):
+        """Draw level completion screen"""
+        self.screen.fill(BLACK)
+
+        # Title
+        title_text = pygame.font.Font(None, 48).render("🎉 LEVEL COMPLETED!", True, CONSOLE_SUCCESS)
+        title_rect = title_text.get_rect(center=(SCREEN_WIDTH//2, 150))
+        self.screen.blit(title_text, title_rect)
+
+        if self.current_level:
+            # Level info
+            level_text = pygame.font.Font(None, 32).render(f"Level {self.current_level.level_id}: {self.current_level.name}", True, WHITE)
+            level_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, 200))
+            self.screen.blit(level_text, level_rect)
+
+            # Stats
+            time_taken = time.time() - self.level_start_time if self.level_start_time else 0
+            score = self.calculate_level_score(time_taken)
+
+            stats = [
+                f"⏱️  Time: {time_taken:.1f} seconds",
+                f"⭐ Score: {score}",
+                f"🤖 Commands: {self.robot.commands_executed}",
+                f"📡 Sensors: {self.robot.sensor_calls}"
+            ]
+
+            for i, stat in enumerate(stats):
+                stat_text = pygame.font.Font(None, 24).render(stat, True, CONSOLE_TEXT)
+                stat_rect = stat_text.get_rect(center=(SCREEN_WIDTH//2, 280 + i * 30))
+                self.screen.blit(stat_text, stat_rect)
+
+        # Instructions
+        instruction_text = pygame.font.Font(None, 24).render("Press any key to continue", True, CONSOLE_PROMPT)
+        instruction_rect = instruction_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT - 100))
+        self.screen.blit(instruction_text, instruction_rect)
+
+    def draw_level_info(self):
+        """Draw current level information overlay"""
+        if not self.current_level:
+            return
+
+        # Level info panel
+        panel_width = 250
+        panel_height = 120
+        panel_x = GAME_WIDTH - panel_width - 10
+        panel_y = 10
+
+        # Semi-transparent background
+        panel_surface = pygame.Surface((panel_width, panel_height))
+        panel_surface.set_alpha(200)
+        panel_surface.fill((40, 40, 40))
+        self.screen.blit(panel_surface, (panel_x, panel_y))
+
+        # Border
+        pygame.draw.rect(self.screen, CONSOLE_BORDER, (panel_x, panel_y, panel_width, panel_height), 2)
+
+        # Level info
+        font_small = pygame.font.Font(None, 18)
+        font_medium = pygame.font.Font(None, 20)
+
+        # Title
+        title_text = font_medium.render(f"Level {self.current_level.level_id}: {self.current_level.name}", True, WHITE)
+        self.screen.blit(title_text, (panel_x + 10, panel_y + 10))
+
+        # Difficulty
+        stars = "⭐" * self.current_level.difficulty
+        diff_text = font_small.render(f"Difficulty: {stars}", True, CONSOLE_WARNING)
+        self.screen.blit(diff_text, (panel_x + 10, panel_y + 30))
+
+        # Time
+        if self.level_start_time:
+            elapsed = time.time() - self.level_start_time
+            time_text = font_small.render(f"Time: {elapsed:.1f}s", True, CONSOLE_TEXT)
+            self.screen.blit(time_text, (panel_x + 10, panel_y + 50))
+
+        # Commands
+        cmd_text = font_small.render(f"Commands: {self.robot.commands_executed}", True, CONSOLE_TEXT)
+        self.screen.blit(cmd_text, (panel_x + 10, panel_y + 70))
+
+        # Quick help
+        help_text = font_small.render("F1: Check objectives", True, CONSOLE_PROMPT)
+        self.screen.blit(help_text, (panel_x + 10, panel_y + 90))
 
     def draw_grid(self):
         """Draw modern grid lines for better visualization"""

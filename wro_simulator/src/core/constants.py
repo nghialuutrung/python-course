@@ -1,0 +1,58 @@
+"""
+Constants and configuration for WRO Robot Control System
+"""
+
+# Screen dimensions
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 700
+SIDEBAR_WIDTH = 200
+CONSOLE_WIDTH = 400
+GAME_WIDTH = SCREEN_WIDTH - CONSOLE_WIDTH - SIDEBAR_WIDTH
+FPS = 60
+
+# Modern Color Palette
+WHITE = (255, 255, 255)
+BLACK = (33, 37, 41)
+BLUE = (52, 144, 220)
+GREEN = (40, 167, 69)
+RED = (220, 53, 69)
+YELLOW = (255, 193, 7)
+PURPLE = (111, 66, 193)
+ORANGE = (253, 126, 20)
+
+# Game colors
+BACKGROUND = (248, 249, 250)
+GRID_LIGHT = (233, 236, 239)
+GRID_MAJOR = (173, 181, 189)
+OBSTACLE_COLOR = (108, 117, 125)
+ROBOT_COLOR = (52, 144, 220)
+ITEM_COLOR = (255, 193, 7)
+
+# Console colors
+CONSOLE_BG = (40, 44, 52)
+CONSOLE_BORDER = (73, 80, 87)
+CONSOLE_TEXT = (248, 249, 250)
+CONSOLE_PROMPT = (52, 144, 220)
+CONSOLE_SUCCESS = (40, 167, 69)
+CONSOLE_ERROR = (220, 53, 69)
+CONSOLE_WARNING = (255, 193, 7)
+
+# HUD colors
+HUD_BG = (52, 58, 64)
+HUD_BORDER = (108, 117, 125)
+HUD_TEXT = (33, 37, 41)
+
+# Robot settings
+ROBOT_SIZE = 20
+ROBOT_SPEED = 100  # pixels per second
+ANIMATION_SPEED = 200
+
+# Grid settings
+GRID_SIZE = 50  # pixels per unit
+UNIT_SIZE = 50  # 1 unit = 50 pixels
+
+# Game settings
+MAX_HISTORY = 50
+MAX_OUTPUT_LINES = 100
+MAX_VISIBLE_CONSOLE_LINES = 25
+CONSOLE_LINE_HEIGHT = 20
