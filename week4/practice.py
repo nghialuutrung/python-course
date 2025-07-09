@@ -26,7 +26,18 @@ wanted = 4
 # if wanted == examples[7]:
 #     print("Vị trí số 7")
 
+
+xuat_hien = False
+
 for i in range(len(examples)):
+    print(examples[i])
     if wanted == examples[i]:
-        print(f"Vị trí số {i}")
-        break
+        xuat_hien = True
+        # break
+if xuat_hien == True:
+    print(f"Có số {wanted}")
+    print(f"Vị trí số {i}")
+else:
+    print(f"Wanted: {wanted} không tìm thấy")
+# else:
+#     print(f"Wanted: {wanted} không tìm thấy")
