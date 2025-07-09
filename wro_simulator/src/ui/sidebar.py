@@ -5,6 +5,7 @@ Sidebar UI Component for Robot Status and Level Info
 import pygame
 import time
 from ..core.constants import *
+from .icon_manager import icon_manager
 
 
 class Sidebar:
@@ -57,29 +58,28 @@ class Sidebar:
             pygame.draw.line(screen, color, (rect.x, rect.y + y), (rect.x + rect.width, rect.y + y))
     
     def draw_section_header(self, screen, title, y, icon=None):
-        """Draw section header with icon"""
+        """Draw section header with Font Awesome icon"""
         # Header background
         header_rect = pygame.Rect(10, y, SIDEBAR_WIDTH - 20, 25)
         pygame.draw.rect(screen, (50, 60, 80), header_rect, border_radius=5)
         pygame.draw.rect(screen, (100, 120, 160), header_rect, 1, border_radius=5)
-        
-        # Icon
+
+        # Icon using Font Awesome
         if icon:
-            icon_text = self.font_medium.render(icon, True, (150, 200, 255))
-            screen.blit(icon_text, (15, y + 3))
+            icon_manager.draw_icon(screen, icon, (20, y + 12), size=16, color=(150, 200, 255))
             title_x = 35
         else:
             title_x = 15
-        
+
         # Title
         title_text = self.font_medium.render(title, True, WHITE)
         screen.blit(title_text, (title_x, y + 3))
-        
+
         return y + 30
     
     def draw_robot_status(self, screen, robot, y_start):
         """Draw robot status section"""
-        y = self.draw_section_header(screen, "Robot Status", y_start, "🤖")
+        y = self.draw_section_header(screen, "Robot Status", y_start, "cog")
         
         # Status items
         status_items = [
@@ -111,7 +111,7 @@ class Sidebar:
     
     def draw_level_info(self, screen, level, level_start_time, y_start):
         """Draw level information section"""
-        y = self.draw_section_header(screen, f"Level {level.level_id}", y_start, "🎯")
+        y = self.draw_section_header(screen, f"Level {level.level_id}", y_start, "star")
         
         # Level name
         name_text = self.font_small.render(level.name, True, (150, 200, 255))
@@ -154,7 +154,7 @@ class Sidebar:
     
     def draw_objectives(self, screen, level, robot, y_start):
         """Draw objectives section"""
-        y = self.draw_section_header(screen, "Objectives", y_start, "📋")
+        y = self.draw_section_header(screen, "Objectives", y_start, "check")
         
         progress = level.get_progress(robot)
         
@@ -217,7 +217,7 @@ class Sidebar:
     
     def draw_controls_help(self, screen, y_start):
         """Draw controls help section"""
-        y = self.draw_section_header(screen, "Quick Help", y_start, "💡")
+        y = self.draw_section_header(screen, "Quick Help", y_start, "info")
         
         help_items = [
             "F1: Programming Guide",
