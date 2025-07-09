@@ -4,6 +4,7 @@ Level Selection Screen UI
 
 import pygame
 from ..core.constants import *
+from .icon_manager import icon_manager, get_level_icon, get_level_icon_color
 
 
 class LevelSelectScreen:
@@ -87,12 +88,13 @@ class LevelSelectScreen:
         screen.blit(shadow_text, shadow_rect)
         screen.blit(main_text, title_rect)
         
-        # Robot icon
+        # Robot icon using Font Awesome
         robot_center = (SCREEN_WIDTH//2 - 200, 45)
+        # Draw background circle
         pygame.draw.circle(screen, BLUE, robot_center, 15)
         pygame.draw.circle(screen, WHITE, robot_center, 15, 2)
-        pygame.draw.circle(screen, WHITE, (robot_center[0] - 5, robot_center[1] - 3), 3)
-        pygame.draw.circle(screen, WHITE, (robot_center[0] + 5, robot_center[1] - 3), 3)
+        # Draw robot/cog icon
+        icon_manager.draw_icon(screen, 'cog', robot_center, size=20, color=WHITE)
         
         # Subtitle with level count
         total_levels = len(self.level_manager.levels)
@@ -109,8 +111,8 @@ class LevelSelectScreen:
     def draw_level_cards(self, screen):
         """Draw beautiful level cards with detailed info"""
         start_y = 120
-        card_height = 80  # Reduced height to fit more cards
-        card_spacing = 6   # Reduced spacing
+        card_height = 90  # Increased height to prevent text overlap
+        card_spacing = 8   # Increased spacing
         card_width = SCREEN_WIDTH - 160
 
         # Calculate how many cards can fit on screen
@@ -210,46 +212,64 @@ class LevelSelectScreen:
         text_x = card_rect.x + 70  # Start after icon
         
         if is_unlocked:
-            # Level title - more compact
+            # Level title - better spacing
             title_font = pygame.font.Font(None, 22)
             level_title = f"Level {level.level_id}: {level.name}"
             title_text = title_font.render(level_title, True, WHITE)
-            screen.blit(title_text, (text_x, card_rect.y + 6))
+            screen.blit(title_text, (text_x, card_rect.y + 8))
 
-            # Description - smaller font
+            # Description - better spacing
             desc_text = self.font_small.render(level.description, True, (200, 200, 200))
-            screen.blit(desc_text, (text_x, card_rect.y + 26))
+            screen.blit(desc_text, (text_x, card_rect.y + 28))
 
-            # Compact difficulty and type info
-            stars = "⭐" * level.difficulty
+            # Type info with Font Awesome icons - better spacing
+            # Use Font Awesome stars instead of Unicode
+            stars_text = ""
+            for i in range(level.difficulty):
+                stars_text += "★"
 
-            # Level type indicators - shorter
-            level_types = {
-                1: "🚀 Movement",
-                2: "🔄 Navigation",
-                3: "💎 Collection",
-                4: "📡 Sensors",
-                5: "🧭 Pathfinding",
-                6: "⏱️ Speed"
+            # Get Font Awesome icon for this level
+            icon_name = get_level_icon(level.level_id)
+            icon_color = get_level_icon_color(level.level_id, level.completed)
+
+            # Level type names
+            level_type_names = {
+                1: "Movement",
+                2: "Navigation",
+                3: "Collection",
+                4: "Sensors",
+                5: "Pathfinding",
+                6: "Speed"
             }
 
-            type_indicator = level_types.get(level.level_id, "🎯 Challenge")
-            difficulty_text = f"{type_indicator} • {stars}"
-            stars_text = self.font_small.render(difficulty_text, True, (255, 215, 0))
-            screen.blit(stars_text, (text_x, card_rect.y + 44))
-            
-            # Status and completion info - more compact
-            if level.completed:
-                status_text = self.font_small.render("✅ Done", True, (100, 255, 100))
-                screen.blit(status_text, (text_x, card_rect.y + 60))
+            type_name = level_type_names.get(level.level_id, "Challenge")
 
-                # Best time - more compact
+            # Draw icon and text on same line - better spacing
+            icon_pos = (text_x + 8, card_rect.y + 48)
+            icon_manager.draw_icon(screen, icon_name, icon_pos, size=14, color=icon_color)
+
+            # Draw type name and difficulty - better spacing
+            type_text = f" {type_name} • {stars_text}"
+            difficulty_text = self.font_small.render(type_text, True, (255, 215, 0))
+            screen.blit(difficulty_text, (text_x + 18, card_rect.y + 48))
+            
+            # Status and completion info with Font Awesome icons - better spacing
+            if level.completed:
+                # Completed status with check icon
+                icon_manager.draw_icon(screen, 'check', (text_x + 6, card_rect.y + 68), size=12, color=(100, 255, 100))
+                status_text = self.font_small.render("Done", True, (100, 255, 100))
+                screen.blit(status_text, (text_x + 16, card_rect.y + 68))
+
+                # Best time with clock icon
                 if level.best_time:
+                    icon_manager.draw_icon(screen, 'clock', (card_rect.right - 65, card_rect.y + 68), size=10, color=(150, 200, 255))
                     time_text = self.font_small.render(f"{level.best_time:.1f}s", True, (150, 200, 255))
-                    screen.blit(time_text, (card_rect.right - 80, card_rect.y + 60))
+                    screen.blit(time_text, (card_rect.right - 55, card_rect.y + 68))
             else:
-                status_text = self.font_small.render("🎯 Ready", True, (100, 200, 255))
-                screen.blit(status_text, (text_x, card_rect.y + 60))
+                # Ready status with play icon
+                icon_manager.draw_icon(screen, 'play', (text_x + 6, card_rect.y + 68), size=12, color=(100, 200, 255))
+                status_text = self.font_small.render("Ready", True, (100, 200, 255))
+                screen.blit(status_text, (text_x + 16, card_rect.y + 68))
         else:
             # Locked level
             title_text = self.font_medium.render(f"Level {level.level_id}: ???", True, (120, 120, 120))
@@ -270,15 +290,17 @@ class LevelSelectScreen:
         max_visible_cards = available_height // (card_height + card_spacing)
 
         if total_levels > max_visible_cards:
-            # Show scroll up indicator
+            # Show scroll up indicator with Font Awesome icon
             if self.scroll_offset > 0:
-                up_text = self.font_small.render("▲ More levels above", True, (150, 150, 255))
-                screen.blit(up_text, (SCREEN_WIDTH - 200, 100))
+                icon_manager.draw_icon(screen, 'chevron-up', (SCREEN_WIDTH - 190, 100), size=16, color=(150, 150, 255))
+                up_text = self.font_small.render(" More levels above", True, (150, 150, 255))
+                screen.blit(up_text, (SCREEN_WIDTH - 180, 100))
 
-            # Show scroll down indicator
+            # Show scroll down indicator with Font Awesome icon
             if self.scroll_offset + max_visible_cards < total_levels:
-                down_text = self.font_small.render("▼ More levels below", True, (150, 150, 255))
-                screen.blit(down_text, (SCREEN_WIDTH - 200, SCREEN_HEIGHT - 150))
+                icon_manager.draw_icon(screen, 'chevron-down', (SCREEN_WIDTH - 190, SCREEN_HEIGHT - 150), size=16, color=(150, 150, 255))
+                down_text = self.font_small.render(" More levels below", True, (150, 150, 255))
+                screen.blit(down_text, (SCREEN_WIDTH - 180, SCREEN_HEIGHT - 150))
 
     def draw_footer(self, screen):
         """Draw footer with instructions and progress"""
@@ -295,29 +317,34 @@ class LevelSelectScreen:
         pygame.draw.rect(screen, (25, 35, 45), inst_panel_rect, border_radius=8)
         pygame.draw.rect(screen, (100, 150, 200), inst_panel_rect, 2, border_radius=8)
         
-        # Instructions title
-        inst_title = self.font_medium.render("🎮 Controls", True, (150, 200, 255))
-        screen.blit(inst_title, (inst_panel_rect.x + 15, inst_panel_rect.y + 8))
-        
-        # Instructions
+        # Instructions title with Font Awesome icon
+        icon_manager.draw_icon(screen, 'cog', (inst_panel_rect.x + 20, inst_panel_rect.y + 18), size=16, color=(150, 200, 255))
+        inst_title = self.font_medium.render(" Controls", True, (150, 200, 255))
+        screen.blit(inst_title, (inst_panel_rect.x + 35, inst_panel_rect.y + 8))
+
+        # Instructions with Font Awesome icons
         instructions = [
-            "↑↓  Navigate levels",
-            "⏎   Select level", 
-            "⎋   Exit game"
+            ("chevron-up", "Navigate levels"),
+            ("play", "Select level"),
+            ("arrow-up", "Exit game")
         ]
         
-        for i, instruction in enumerate(instructions):
+        for i, (icon_name, instruction) in enumerate(instructions):
+            # Draw icon
+            icon_manager.draw_icon(screen, icon_name, (inst_panel_rect.x + 20, inst_panel_rect.y + 38 + i * 16), size=12, color=(150, 200, 255))
+            # Draw text
             inst_text = self.font_small.render(instruction, True, (200, 200, 200))
-            screen.blit(inst_text, (inst_panel_rect.x + 15, inst_panel_rect.y + 30 + i * 16))
+            screen.blit(inst_text, (inst_panel_rect.x + 35, inst_panel_rect.y + 30 + i * 16))
         
         # Progress panel
         progress_panel_rect = pygame.Rect(SCREEN_WIDTH - 350, footer_y + 20, 300, 80)
         pygame.draw.rect(screen, (25, 35, 45), progress_panel_rect, border_radius=8)
         pygame.draw.rect(screen, (100, 200, 100), progress_panel_rect, 2, border_radius=8)
         
-        # Progress title
-        progress_title = self.font_medium.render("📊 Progress", True, (150, 255, 150))
-        screen.blit(progress_title, (progress_panel_rect.x + 15, progress_panel_rect.y + 8))
+        # Progress title with Font Awesome icon
+        icon_manager.draw_icon(screen, 'check', (progress_panel_rect.x + 20, progress_panel_rect.y + 18), size=16, color=(150, 255, 150))
+        progress_title = self.font_medium.render(" Progress", True, (150, 255, 150))
+        screen.blit(progress_title, (progress_panel_rect.x + 35, progress_panel_rect.y + 8))
         
         # Progress stats
         progress = self.level_manager.get_progress()

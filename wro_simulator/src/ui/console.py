@@ -8,6 +8,7 @@ import sys
 import time
 from io import StringIO
 from ..core.constants import *
+from .icon_manager import icon_manager
 
 
 class PythonConsole:
@@ -334,10 +335,8 @@ class PythonConsole:
         footer_y = SCREEN_HEIGHT - 25
         font = pygame.font.Font(None, 18)
 
-        # Light bulb icon
-        bulb_center = (console_x + 25, footer_y + 8)
-        pygame.draw.circle(screen, CONSOLE_WARNING, bulb_center, 6)
-        pygame.draw.circle(screen, WHITE, bulb_center, 6, 1)
+        # Info icon using Font Awesome
+        icon_manager.draw_icon(screen, 'info', (console_x + 25, footer_y + 8), size=12, color=CONSOLE_WARNING)
         
         # Footer text
         if len(self.output_lines) > self.max_visible_lines:
